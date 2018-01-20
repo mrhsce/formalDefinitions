@@ -1,0 +1,151 @@
+\documentclass{article}
+
+\usepackage[mathrm,colour,cntbysection]{czt}
+
+% count definitions per section
+\CountDefstrue
+
+\begin{document}
+
+\begin{center}
+\begin{Huge}
+Formal specification \\
+
+{\huge Second assignment\\}
+\end{Huge}
+\begin{large}
+\begin{flushleft}
+Muhammad Reza Hidarian \t7 95210551
+\\Esmaeel Gholami \t10 96210145
+\end{flushleft}	
+\end{large}\end{center}
+
+\section{Finding minimum spanning tree for graph}
+
+Based on the definition of the second project, our aim here is to check whether or not a specific tree is minimum spanning tree for a specific graph. The main function is 
+
+\subsection*{Generic types}
+The only generic type here is vertex.
+\begin{zed}
+  [Vertex]
+\end{zed}
+
+\subsection*{Weighted interlocked graph}
+A weighted graph is a graph whose edges have a specific number assigned to them as weight and interlocked means that for every two different vertices there is a route connecting them. The following schema shows the identifiers and constraints for a weighted interlocked graph.
+\begin{schema}{WI\_Graph}
+  v : \finset Vertex\\
+  e : \finset Vertex \fun \num
+\where
+  \forall x : \finset Vertex | x \in \dom e @ \# x = 2 \land x \subseteq v\\
+  \forall v1, v2 : Vertex | v1 \in v \land v2 \in v @ \exists s : \seq Vertex @\\ \t1
+   \forall i : \nat_1 | i < \# s @ \{s.1, s.i+1\} \in \dom e \land
+  \{v1, s.1\} \in \dom e \land \\ \t2
+  \{s.\#s, v2\} \in \dom e
+\end{schema}
+
+\subsection*{Weighted interlocked tree}
+A weighted tree is an interlocked graph whose edges have a specific number assigned to them as weight and the count of vertices is one more than the count of edges. The following schema shows the identifiers and constraints for a weighted interlocked tree.
+\begin{schema}{WI\_Tree}
+  v : \finset Vertex\\
+  e : \finset Vertex \fun \num
+\where
+  \forall x : \finset Vertex | x \in \dom e @ \# x = 2 \land x \subseteq v\\
+  \forall v1, v2 : Vertex | v1 \in v \land v2 \in v @ \exists s : \seq Vertex @\\ \t1
+   \forall i : \nat_1 | i < \# s @ \{s.1, s.i+1\} \in \dom e \land
+  \{v1, s.1\} \in \dom e \land \\ \t2
+  \{s.\#s, v2\} \in \dom e\\
+  \#v = \#\dom e + 1
+\end{schema}
+
+\subsection*{Calculate weight function}
+The following function takes the edges of a graph and gives the summation of weights of all edges.
+\begin{axdef}
+  weight : (\finset vertex \fun \num)\fun \num
+\where
+  \forall x : \finset vertex \fun \num @ \\
+   \#x = 0 \fun weight x = 0 \\ \#x \neq 0 \fun \exists e \in x @ weight~x = e.2 + weight~(x-e)
+\end{axdef}
+
+\subsection*{check is spanning tree function}
+The following function takes a tree and a graph and checks whether or not the tree is the spanning tree of the graph.
+\begin{axdef}
+  spanningTree~\_~\_ : WI\_Tree \cross WI\_Graph
+\where
+  \forall wt : WI\_Tree, wg : WI\_Graph @ \\
+  spanningTree~wt~wg \iff wg.v = wt.v
+\end{axdef}
+
+\subsection*{check is minimum spanning tree function}
+This is the main function and takes a tree and a graph and checks whether or not the tree is the minimum spanning tree of the graph. 1 meas positive and 0 means negative.
+\begin{axdef}
+  minimumSpanningTree~\_~\_ : WI\_Tree \cross WI\_Graph
+\where
+  \forall wt : WI\_Tree, wg : WI\_Graph @ \\
+  spanningTree~wt~wg \iff \\ \forall wt1 : WI\_Tree | spanning~wt1~wg @ weight~wt \leq weight~wt1
+\end{axdef}
+
+\section{Musical chair formal definition}
+Based on the description of the game there are two generic types:
+\begin{zed}
+  [Player, Chair]
+\end{zed}
+
+The schema of the game is as follows:
+
+\begin{schema}{MusicalChair}
+  pl : \finset Player\\
+  ch : \finset Chair \\
+  occupiers : Chair  \pinj Player
+\where
+  \# ch \geq 1\\
+  \# pl = \# ch +1\\
+  \dom occupiers \subseteq ch\\
+  \ran occupiers \subseteq pl
+\end{schema}
+
+\subsection*{MusicPlay}
+The operation for when the music starts and keeps playing:
+\begin{schema}{MusicPlay}
+  \Delta MusicalChair
+\where
+  pl' = pl\\
+  ch' = ch\\
+  occupiers' = \emptyset
+\end{schema}
+
+\subsection*{MusicStop}
+The operation for when the music stops:
+\begin{schema}{MusicStop}
+  \Delta MusicalChair\\
+  out! : Player
+\where
+  ch' = ch\\
+  \dom occupiers' = ch'\\
+  out! \in pl - \ran occupiers'
+\end{schema}
+
+\subsection*{RemoveLoser}
+The operation for when the loser should be removed:
+\begin{schema}{RemoveLoser}
+  \Delta MusicalChair\\
+  out? : Player
+\where
+  pl' = pl - \{ out? \}\\
+  \exists chair : Chair | chair \in ch @ ch' = ch - \{chair\}
+\end{schema}
+
+\subsection*{Game}
+The game itself:
+\begin{zed}
+MusicalChairInit == MusicalChairs'; p? : \finset Player; c?:\finset Chair | \\ \t1
+\#c? \geq 1 \land \# p? = \# c? + 1 \land pl' = p? \land ch' = c?  \\\\
+  
+  GameFinished == MusicalChairs; winner! : Player | \\ \t1
+  \# occupiers = 1 \land winner! \in \ran occupiers \\\\
+  
+  PlayMusicalChairs == MusicalChairInit \typecolon \\ \t1
+   (MusicPlay \typecolon MusicStop \typecolon RemoveLoser[out!/out?])^{n} \typecolon \\ \t1 GameFinished \\ \t2
+    Where~n= \# c? -1
+\end{zed}
+
+\end{document}
